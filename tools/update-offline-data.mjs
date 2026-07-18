@@ -132,6 +132,7 @@ function disableBrowserUpdater(html) {
     function pokemonFromSnapshot(snapshot) {
       return Array.from({ length: snapshot.count }, (_, index) => ({
         id: index + 1,
+        generation: Number(snapshot.generations?.[index]) || generationForId(index + 1),
         defaultName: snapshot.identifiers[index] || snapshot.names.en[index],
         names: LOCAL_LANGUAGES.map(language => ({
           language: { name: language === "ja" ? "ja-Hrkt" : language },
@@ -142,12 +143,11 @@ function disableBrowserUpdater(html) {
 
     function applySnapshot(snapshot) {
       if (!isValidSnapshot(snapshot)) return false;
-      MAX_POKEMON = snapshot.count;
-      pokemonList = pokemonFromSnapshot(snapshot);
-      totalElement.textContent = pokemonList.length;
-      updateLanguageUI();
-      createCards();
-      restoreFoundPokemon();
+      allPokemonList = pokemonFromSnapshot(snapshot);
+      availableGenerations = [...new Set(allPokemonList.map(pokemon => pokemon.generation).filter(Boolean))].sort((a, b) => a - b);
+      if (activeGeneration !== 'all' && !availableGenerations.includes(Number(activeGeneration))) activeGeneration = 'all';
+      populateGenerationOptions();
+      applyGenerationFilter();
       return true;
     }
 
@@ -273,11 +273,15 @@ async function main() {
   const namesRows = parseCsv(namesText);
   const count = Math.min(Number(countPayload.count) || speciesRows.length, speciesRows.length);
   const identifiers = new Array(count);
+  const generations = new Array(count);
   const names = Object.fromEntries(Object.keys(languages).map(language => [language, new Array(count)]));
 
   for (const row of speciesRows) {
     const id = Number(row.id);
-    if (id >= 1 && id <= count) identifiers[id - 1] = row.identifier;
+    if (id >= 1 && id <= count) {
+      identifiers[id - 1] = row.identifier;
+      generations[id - 1] = Number(row.generation_id) || null;
+    }
   }
   const languageById = Object.fromEntries(Object.entries(languages).map(([key, id]) => [id, key]));
   for (const row of namesRows) {
@@ -295,11 +299,12 @@ async function main() {
     && existing.sprites.length >= count;
   const sprites = canReuseSprites ? existing.sprites.slice(0, count) : await loadSprites(count);
   const snapshotCore = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     pokeApiHash: countResponse.headers.get("x-pokeapi-hash") || "",
     spriteCommit,
     count,
     identifiers,
+    generations,
     names
   };
   const existingCore = existing.snapshot ? { ...existing.snapshot } : null;
