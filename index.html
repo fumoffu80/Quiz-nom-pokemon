@@ -149,31 +149,6 @@
       flex-wrap: wrap;
     }
 
-    .sync-status {
-      flex-basis: 100%;
-      min-height: 20px;
-      color: #9ca3af;
-      font-size: 13px;
-      text-align: center;
-    }
-
-    .sync-status[data-state="checking"] { color: #facc15; }
-    .sync-status[data-state="updated"] { color: #34d399; }
-    .sync-status[data-state="offline"] { color: #fbbf24; }
-
-    #updateButton {
-      padding: 10px 16px;
-      border: 1px solid #4b5563;
-      border-radius: 10px;
-      background: #374151;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    #updateButton:hover { transform: scale(1.05); }
-    #updateButton:disabled { cursor: wait; opacity: 0.65; transform: none; }
 
     .input-container {
       position: relative;
@@ -412,8 +387,6 @@
 
       <button id="revealAllButton">Tout Révéler</button>
       <button id="resetButton">Reset</button>
-      <button id="updateButton" type="button">↻ Vérifier les mises à jour</button>
-      <div id="syncStatus" class="sync-status" data-state="localReady" aria-live="polite">Base locale prête</div>
     </div>
   </div>
 
@@ -437,11 +410,6 @@
         timeAttack: "⏱️ Contre la montre (1h)", 
         noImageMode: "🖼️ Mode sans image", 
         noImageModeOn: "🖼️ Afficher les images", 
-        update: "↻ Vérifier les mises à jour",
-        localReady: "Base locale prête",
-        checking: "Vérification des mises à jour…",
-        updated: "Mise à jour terminée",
-        offline: "Hors ligne — base locale utilisée",
         confirmTime: "Démarrer le contre la montre (1h) ? Votre progression actuelle sera réinitialisée.", 
         timeUp: "Temps écoulé ! Score : " 
       },
@@ -461,11 +429,6 @@
         timeAttack: "⏱️ Time Attack (1h)", 
         noImageMode: "🖼️ No Image Mode", 
         noImageModeOn: "🖼️ Show Images", 
-        update: "↻ Check for updates",
-        localReady: "Local database ready",
-        checking: "Checking for updates…",
-        updated: "Update complete",
-        offline: "Offline — using local database",
         confirmTime: "Start 1h Time Attack? Your current progress will be reset.", 
         timeUp: "Time is up! Score: " 
       },
@@ -485,11 +448,6 @@
         timeAttack: "⏱️ Contrarreloj (1h)", 
         noImageMode: "🖼️ Modo sin imágenes", 
         noImageModeOn: "🖼️ Mostrar imágenes", 
-        update: "↻ Buscar actualizaciones",
-        localReady: "Base local lista",
-        checking: "Buscando actualizaciones…",
-        updated: "Actualización terminada",
-        offline: "Sin conexión — usando la base local",
         confirmTime: "¿Iniciar contrarreloj de 1h? Tu progreso actual se reiniciará.", 
         timeUp: "¡Tiempo agotado! Puntuación: " 
       },
@@ -509,11 +467,6 @@
         timeAttack: "⏱️ Zeitangriff (1h)", 
         noImageMode: "🖼️ Modus ohne Bilder", 
         noImageModeOn: "🖼️ Bilder anzeigen", 
-        update: "↻ Nach Updates suchen",
-        localReady: "Lokale Datenbank bereit",
-        checking: "Updates werden gesucht…",
-        updated: "Update abgeschlossen",
-        offline: "Offline — lokale Datenbank wird verwendet",
         confirmTime: "1h Zeitangriff starten? Dein aktueller Fortschritt wird zurückgesetzt.", 
         timeUp: "Zeit abgelaufen! Punktzahl: " 
       },
@@ -533,11 +486,6 @@
         timeAttack: "⏱️ Sfida a tempo (1h)", 
         noImageMode: "🖼️ Modalità senza immagini", 
         noImageModeOn: "🖼️ Mostra immagini", 
-        update: "↻ Controlla aggiornamenti",
-        localReady: "Database locale pronto",
-        checking: "Controllo aggiornamenti…",
-        updated: "Aggiornamento completato",
-        offline: "Offline — uso del database locale",
         confirmTime: "Iniziare la Sfida a tempo (1h)? Il tuo progresso attuale verrà cancellato.", 
         timeUp: "Tempo scaduto! Punteggio: " 
       },
@@ -557,11 +505,6 @@
         timeAttack: "⏱️ タイムアタック (1時間)", 
         noImageMode: "🖼️ 画像なしモード", 
         noImageModeOn: "🖼️ 画像を表示", 
-        update: "↻ 更新を確認",
-        localReady: "ローカルデータ準備完了",
-        checking: "更新を確認中…",
-        updated: "更新完了",
-        offline: "オフライン — ローカルデータを使用",
         confirmTime: "1時間のタイムアタックを開始しますか？現在の進行状況はリセットされます。", 
         timeUp: "時間切れ！ スコア: " 
       }
@@ -590,10 +533,6 @@ const LOCAL_SPRITES = ["iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAMFBMVEUA
     let pokemonList = [];
     let MAX_POKEMON = OFFLINE_SNAPSHOT.count;
     let noImageMode = false;
-    let activeSnapshot = OFFLINE_SNAPSHOT;
-    let syncState = { state: "localReady", detail: "" };
-    let syncInProgress = false;
-    const spriteObjectUrls = new Map();
 
     document.getElementById('currentFlag').src = flags[currentLang];
     
@@ -627,8 +566,6 @@ const LOCAL_SPRITES = ["iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAMFBMVEUA
       document.getElementById('resetButton').textContent = texts.reset;
       document.getElementById('timeAttackBtn').textContent = texts.timeAttack;
       document.getElementById('noImageBtn').textContent = noImageMode ? texts.noImageModeOn : texts.noImageMode;
-      document.getElementById('updateButton').textContent = texts.update;
-      setSyncStatus(syncState.state, syncState.detail);
     }
 
     document.getElementById('langSelect').addEventListener('change',(e)=>{
@@ -649,25 +586,8 @@ updateLanguageUI();createCards();updateScore();updateCounters();restoreFoundPoke
       return nameObj ? nameObj.name : pokemon.defaultName;
     }
 
-    const UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000;
-    const POKEAPI_COUNT_URL = "https://pokeapi.co/api/v2/pokemon-species?limit=1";
-    const POKEAPI_CSV_BASE = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv";
-    const POKEAPI_SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
-    const POKEAPI_SPRITES_REPO = "https://api.github.com/repos/PokeAPI/sprites";
-    const LANGUAGE_IDS = { fr: 5, en: 9, es: 7, de: 6, it: 8, ja: 1 };
-    const DB_NAME = "pokemonQuizOfflineCache";
-    const DB_VERSION = 1;
+    const LOCAL_LANGUAGES = ["fr", "en", "es", "de", "it", "ja"];
     const EMPTY_SPRITE = svgDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="12" fill="#111827"/><path fill="#4b5563" d="M48 17a31 31 0 1 0 0 62 31 31 0 0 0 0-62Zm0 8a23 23 0 0 1 21.6 15H55a10 10 0 0 0-14 0H26.4A23 23 0 0 1 48 25Zm0 46a23 23 0 0 1-21.6-15H41a10 10 0 0 0 14 0h14.6A23 23 0 0 1 48 71Zm0-23a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>');
-    let dbPromise = null;
-
-    function setSyncStatus(state, detail = "") {
-      syncState = { state, detail };
-      const element = document.getElementById("syncStatus");
-      if (!element) return;
-      element.dataset.state = state;
-      const translated = i18n[currentLang]?.[state] || i18n[currentLang].localReady;
-      element.textContent = detail ? `${translated} — ${detail}` : translated;
-    }
 
     function isValidSnapshot(snapshot) {
       return snapshot
@@ -676,28 +596,24 @@ updateLanguageUI();createCards();updateScore();updateCounters();restoreFoundPoke
         && Array.isArray(snapshot.identifiers)
         && snapshot.identifiers.length >= snapshot.count
         && snapshot.names
-        && Object.keys(LANGUAGE_IDS).every(language =>
+        && LOCAL_LANGUAGES.every(language =>
           Array.isArray(snapshot.names[language]) && snapshot.names[language].length >= snapshot.count
         );
     }
 
     function pokemonFromSnapshot(snapshot) {
-      return Array.from({ length: snapshot.count }, (_, index) => {
-        const id = index + 1;
-        return {
-          id,
-          defaultName: snapshot.identifiers[index] || snapshot.names.en[index],
-          names: Object.keys(LANGUAGE_IDS).map(language => ({
-            language: { name: language === "ja" ? "ja-Hrkt" : language },
-            name: snapshot.names[language][index]
-          }))
-        };
-      });
+      return Array.from({ length: snapshot.count }, (_, index) => ({
+        id: index + 1,
+        defaultName: snapshot.identifiers[index] || snapshot.names.en[index],
+        names: LOCAL_LANGUAGES.map(language => ({
+          language: { name: language === "ja" ? "ja-Hrkt" : language },
+          name: snapshot.names[language][index]
+        }))
+      }));
     }
 
     function applySnapshot(snapshot) {
       if (!isValidSnapshot(snapshot)) return false;
-      activeSnapshot = snapshot;
       MAX_POKEMON = snapshot.count;
       pokemonList = pokemonFromSnapshot(snapshot);
       totalElement.textContent = pokemonList.length;
@@ -707,280 +623,20 @@ updateLanguageUI();createCards();updateScore();updateCounters();restoreFoundPoke
       return true;
     }
 
-    function openCacheDatabase() {
-      if (!("indexedDB" in window)) return Promise.resolve(null);
-      if (dbPromise) return dbPromise;
-      dbPromise = new Promise(resolveDatabase => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = () => {
-          const database = request.result;
-          if (!database.objectStoreNames.contains("snapshot")) database.createObjectStore("snapshot", { keyPath: "key" });
-          if (!database.objectStoreNames.contains("meta")) database.createObjectStore("meta", { keyPath: "key" });
-          if (!database.objectStoreNames.contains("sprites")) database.createObjectStore("sprites", { keyPath: "id" });
-        };
-        request.onsuccess = () => resolveDatabase(request.result);
-        request.onerror = () => {
-          console.warn("Cache IndexedDB indisponible:", request.error);
-          resolveDatabase(null);
-        };
-      });
-      return dbPromise;
-    }
-
-    async function cacheRequest(storeName, mode, action) {
-      const database = await openCacheDatabase();
-      if (!database) return null;
-      return new Promise((resolveRequest, rejectRequest) => {
-        try {
-          const transaction = database.transaction(storeName, mode);
-          const request = action(transaction.objectStore(storeName));
-          request.onsuccess = () => resolveRequest(request.result ?? null);
-          request.onerror = () => rejectRequest(request.error);
-        } catch (error) {
-          rejectRequest(error);
-        }
-      });
-    }
-
-    const cacheGet = (store, key) => cacheRequest(store, "readonly", objectStore => objectStore.get(key));
-    const cacheGetAll = store => cacheRequest(store, "readonly", objectStore => objectStore.getAll());
-    const cachePut = (store, value) => cacheRequest(store, "readwrite", objectStore => objectStore.put(value));
-
-    function parseCsv(text) {
-      const rows = [];
-      let row = [], field = "", quoted = false;
-      for (let index = 0; index < text.length; index++) {
-        const char = text[index];
-        if (quoted) {
-          if (char === '"' && text[index + 1] === '"') { field += '"'; index++; }
-          else if (char === '"') quoted = false;
-          else field += char;
-        } else if (char === '"') quoted = true;
-        else if (char === ",") { row.push(field); field = ""; }
-        else if (char === "\n") { row.push(field.replace(/\r$/, "")); rows.push(row); row = []; field = ""; }
-        else field += char;
-      }
-      if (field || row.length) { row.push(field.replace(/\r$/, "")); rows.push(row); }
-      const headers = rows.shift() || [];
-      return rows.filter(values => values.some(Boolean)).map(values =>
-        Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]))
-      );
-    }
-
-    async function fetchWithTimeout(url, options = {}, timeout = 20000) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
-      try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-        return response;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    function snapshotFromCsv(speciesText, namesText, requestedCount, pokeApiHash) {
-      const speciesRows = parseCsv(speciesText);
-      const nameRows = parseCsv(namesText);
-      const count = Math.min(Number(requestedCount) || speciesRows.length, speciesRows.length);
-      const identifiers = new Array(count);
-      const names = Object.fromEntries(Object.keys(LANGUAGE_IDS).map(language => [language, new Array(count)]));
-      for (const row of speciesRows) {
-        const id = Number(row.id);
-        if (id >= 1 && id <= count) identifiers[id - 1] = row.identifier;
-      }
-      const languageById = Object.fromEntries(Object.entries(LANGUAGE_IDS).map(([language, id]) => [id, language]));
-      for (const row of nameRows) {
-        const id = Number(row.pokemon_species_id);
-        const language = languageById[Number(row.local_language_id)];
-        if (language && id >= 1 && id <= count) names[language][id - 1] = row.name;
-      }
-      for (let index = 0; index < count; index++) {
-        const fallback = names.en[index] || identifiers[index] || `pokemon-${index + 1}`;
-        for (const language of Object.keys(names)) names[language][index] ||= fallback;
-      }
-      return {
-        schemaVersion: 1,
-        generatedAt: new Date().toISOString(),
-        pokeApiHash,
-        spriteCommit: activeSnapshot.spriteCommit || OFFLINE_SNAPSHOT.spriteCommit,
-        count,
-        identifiers,
-        names
-      };
-    }
-
     function localSpriteSource(id) {
       const encoded = LOCAL_SPRITES[id - 1];
       return encoded ? `data:image/png;base64,${encoded}` : EMPTY_SPRITE;
     }
 
     function spriteSource(id) {
-      return spriteObjectUrls.get(id) || localSpriteSource(id);
+      return localSpriteSource(id);
     }
 
-    function applySpriteBlob(id, blob) {
-      const previous = spriteObjectUrls.get(id);
-      if (previous) URL.revokeObjectURL(previous);
-      const objectUrl = URL.createObjectURL(blob);
-      spriteObjectUrls.set(id, objectUrl);
-      const image = document.querySelector(`#pokemon-${id} .pokemon-image`);
-      if (image) image.src = objectUrl;
-    }
-
-    async function restoreCachedSprites() {
-      try {
-        const records = await cacheGetAll("sprites") || [];
-        const bundledAt = Date.parse(OFFLINE_SNAPSHOT.generatedAt || 0);
-        for (const record of records) {
-          if (record?.blob instanceof Blob && (record.id > LOCAL_SPRITES.length || Number(record.updatedAt) > bundledAt)) {
-            applySpriteBlob(record.id, record.blob);
-          }
-        }
-      } catch (error) {
-        console.warn("Sprites en cache indisponibles:", error);
-      }
-    }
-
-    async function latestSpriteCommit() {
-      const response = await fetchWithTimeout(
-        `${POKEAPI_SPRITES_REPO}/commits?path=sprites/pokemon&per_page=1`,
-        { cache: "no-store", headers: { Accept: "application/vnd.github+json" } }
-      );
-      const commits = await response.json();
-      if (!commits[0]?.sha) throw new Error("Version des sprites introuvable");
-      return commits[0].sha;
-    }
-
-    async function downloadSpriteIds(ids, commit) {
-      let cursor = 0;
-      let downloaded = 0;
-      const workers = Array.from({ length: Math.min(12, ids.length) }, async () => {
-        while (cursor < ids.length) {
-          const id = ids[cursor++];
-          const response = await fetchWithTimeout(`${POKEAPI_SPRITE_BASE}/${id}.png`, { cache: "no-store" }, 30000);
-          const blob = await response.blob();
-          const record = { id, blob, sha: commit, updatedAt: Date.now() };
-          await cachePut("sprites", record);
-          applySpriteBlob(id, blob);
-          downloaded++;
-        }
-      });
-      await Promise.all(workers);
-      return downloaded;
-    }
-
-    async function syncRemoteSprites(remoteCount) {
-      const latest = await latestSpriteCommit();
-      const storedMeta = await cacheGet("meta", "spriteCommit").catch(() => null);
-      const previous = storedMeta?.value || OFFLINE_SNAPSHOT.spriteCommit;
-      const newIds = Array.from(
-        { length: Math.max(0, remoteCount - LOCAL_SPRITES.length) },
-        (_, index) => LOCAL_SPRITES.length + index + 1
-      );
-      if (latest === previous && newIds.length === 0) return 0;
-
-      const ids = new Set(newIds);
-      if (previous && latest !== previous) {
-        try {
-          const response = await fetchWithTimeout(
-            `${POKEAPI_SPRITES_REPO}/compare/${encodeURIComponent(previous)}...${encodeURIComponent(latest)}`,
-            { cache: "no-store", headers: { Accept: "application/vnd.github+json" } },
-            30000
-          );
-          const comparison = await response.json();
-          if ((comparison.ahead_by || 0) > 250 || (comparison.files?.length || 0) >= 300) {
-            for (let id = 1; id <= remoteCount; id++) ids.add(id);
-          } else {
-            for (const file of comparison.files || []) {
-              const match = file.filename.match(/^sprites\/pokemon\/(\d+)\.png$/);
-              const id = match ? Number(match[1]) : 0;
-              if (id >= 1 && id <= remoteCount && file.status !== "removed") ids.add(id);
-            }
-          }
-        } catch (error) {
-          console.warn("Comparaison des sprites impossible, téléchargement des nouveaux sprites seulement:", error);
-        }
-      }
-      const downloaded = ids.size ? await downloadSpriteIds([...ids].sort((a, b) => a - b), latest) : 0;
-      await cachePut("meta", { key: "spriteCommit", value: latest, updatedAt: Date.now() });
-      return downloaded;
-    }
-
-    async function checkForUpdates(force = false) {
-      if (syncInProgress) return;
-      const lastCheck = Number(localStorage.getItem("pokemonQuizLastUpdateCheck") || 0);
-      if (!force && Date.now() - lastCheck < UPDATE_INTERVAL) return;
-      syncInProgress = true;
-      document.getElementById("updateButton").disabled = true;
-      setSyncStatus("checking");
-      try {
-        const countResponse = await fetchWithTimeout(POKEAPI_COUNT_URL, { cache: "no-store" });
-        const payload = await countResponse.json();
-        const remoteCount = Number(payload.count) || activeSnapshot.count;
-        const remoteHash = countResponse.headers.get("x-pokeapi-hash") || "";
-        const dataChanged = remoteCount !== activeSnapshot.count
-          || (remoteHash && remoteHash !== activeSnapshot.pokeApiHash);
-        if (dataChanged) {
-          const [speciesResponse, namesResponse] = await Promise.all([
-            fetchWithTimeout(`${POKEAPI_CSV_BASE}/pokemon_species.csv`, { cache: "no-store" }, 30000),
-            fetchWithTimeout(`${POKEAPI_CSV_BASE}/pokemon_species_names.csv`, { cache: "no-store" }, 30000)
-          ]);
-          const snapshot = snapshotFromCsv(
-            await speciesResponse.text(),
-            await namesResponse.text(),
-            remoteCount,
-            remoteHash
-          );
-          await cachePut("snapshot", { key: "current", value: snapshot }).catch(error =>
-            console.warn("Mise à jour des noms non persistée:", error)
-          );
-          applySnapshot(snapshot);
-        }
-        let spriteCount = 0;
-        try {
-          spriteCount = await syncRemoteSprites(remoteCount);
-        } catch (error) {
-          console.warn("Mise à jour des sprites indisponible:", error);
-        }
-        localStorage.setItem("pokemonQuizLastUpdateCheck", String(Date.now()));
-        const detail = spriteCount ? `${MAX_POKEMON} Pokémon, ${spriteCount} sprite(s)` : `${MAX_POKEMON} Pokémon`;
-        setSyncStatus("updated", detail);
-      } catch (error) {
-        console.warn("PokeAPI indisponible, la base locale reste active:", error);
-        setSyncStatus("offline");
-      } finally {
-        syncInProgress = false;
-        document.getElementById("updateButton").disabled = false;
-      }
-    }
-
-    async function loadPokemonList() {
+    function loadPokemonList() {
       loadProgress();
       applySnapshot(OFFLINE_SNAPSHOT);
-      setSyncStatus("localReady", `${OFFLINE_SNAPSHOT.count} Pokémon`);
-      try {
-        const cached = await cacheGet("snapshot", "current");
-        const cachedSnapshot = cached?.value;
-        const cachedIsNewer = isValidSnapshot(cachedSnapshot)
-          && (cachedSnapshot.count > OFFLINE_SNAPSHOT.count
-            || Date.parse(cachedSnapshot.generatedAt || 0) > Date.parse(OFFLINE_SNAPSHOT.generatedAt || 0));
-        if (cachedIsNewer) applySnapshot(cachedSnapshot);
-        await restoreCachedSprites();
-      } catch (error) {
-        console.warn("Cache local secondaire indisponible:", error);
-      }
-      const schedule = window.requestIdleCallback
-        ? callback => window.requestIdleCallback(callback, { timeout: 3000 })
-        : callback => setTimeout(callback, 1200);
-      schedule(() => checkForUpdates(false));
     }
 
-    document.getElementById("updateButton").addEventListener("click", () => checkForUpdates(true));
-    window.addEventListener("online", () => checkForUpdates(false));
-    window.addEventListener("beforeunload", () => {
-      for (const url of spriteObjectUrls.values()) URL.revokeObjectURL(url);
-    });
     window.addEventListener("DOMContentLoaded", loadPokemonList);
 
     function normalize(str) {
