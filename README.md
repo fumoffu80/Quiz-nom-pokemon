@@ -20,7 +20,11 @@ construction décrit ci-dessous.
 - interface entièrement traduite dans les six langues disponibles ;
 - sélection de toutes les générations ou d'une génération précise ;
 - contre la montre avec durées rapides ou durée exacte personnalisée en heures,
-  minutes et secondes.
+  minutes et secondes ;
+- écran d'accueil présentant les fonctions et permettant de préparer la partie ;
+- reconnaissance automatique d'une petite faute de saisie ;
+- pause sécurisée qui masque le quiz et écran de victoire avec temps réalisé ;
+- favicon Poké Ball entièrement intégré au HTML.
 
 ## Mise à jour et déploiement GitHub Pages
 
