@@ -119,13 +119,19 @@ check(generationRanges.at(-1)[1] === minimumCount, "Les générations historique
 
 for (const id of [
   "generationSelect", "timerDialog", "timerPreset", "customHours", "customMinutes", "customSeconds",
-  "welcomeScreen", "welcomeLanguage", "welcomeGeneration", "welcomeStartButton",
+  "welcomeScreen", "welcomeLanguage", "welcomeFlag", "welcomeGeneration", "welcomeStartButton",
   "pauseTimerBtn", "pauseOverlay", "resumeTimerButton", "victoryDialog"
 ]) {
   check(html.includes(`id="${id}"`), `Contrôle #${id} absent.`);
 }
 
 check(/<link rel="icon"[^>]+image\/svg\+xml[^>]+data:image\/svg\+xml/i.test(html), "Favicon Poké Ball autonome absent.");
+check(!html.includes('id="welcomeFeatureOffline"'), "L'ancienne carte d'autonomie est encore affichée sur l'accueil.");
+check(html.includes('class="pokedex-icon"'), "Pictogramme Pokédex absent de l'accueil.");
+check(html.includes('background: rgba(3, 7, 18, 0.5)'), "Transparence à 50 % de l'accueil absente.");
+check(html.includes('backdrop-filter: blur(16px)'), "Flou de protection derrière l'accueil absent.");
+check(script?.includes("const REGION_NAMES ="), "Noms des régions Pokémon absents.");
+check(script?.includes("function generationOptionLabel(number)"), "Régions non reliées aux générations.");
 check(script?.includes("function findUniqueTypoMatch(value)"), "Validation automatique des petites fautes absente.");
 check(script?.includes("function pauseTimeAttack()"), "Pause du chronomètre absente.");
 check(script?.includes("function checkVictory()"), "Écran de victoire absent.");
@@ -142,4 +148,4 @@ if (errors.length) {
 }
 
 const generationCount = snapshot?.generations ? new Set(snapshot.generations).size : 9;
-console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues, ${sprites.length} sprites PNG, ${generationCount} générations, accueil, saisie tolérante, pause et victoire.`);
+console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues, ${sprites.length} sprites PNG, ${generationCount} générations avec régions, accueil flouté, saisie tolérante, pause et victoire.`);
