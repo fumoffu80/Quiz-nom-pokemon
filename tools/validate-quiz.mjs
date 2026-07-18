@@ -75,6 +75,7 @@ if (translations?.fr) {
   for (const language of languages) {
     const missing = requiredKeys.filter(key => !translations[language]?.[key]);
     check(missing.length === 0, `Textes ${language} manquants: ${missing.join(", ")}`);
+    check(/[.!?。]$/.test(translations[language]?.welcomeFeatureGenerations || ""), `Ponctuation finale manquante pour le texte Pokédex ${language}.`);
   }
 }
 
@@ -133,6 +134,9 @@ check(html.includes('backdrop-filter: blur(16px)'), "Flou de protection derrièr
 check(script?.includes("const REGION_NAMES ="), "Noms des régions Pokémon absents.");
 check(script?.includes("function generationOptionLabel(number)"), "Régions non reliées aux générations.");
 check(script?.includes("function findUniqueTypoMatch(value)"), "Validation automatique des petites fautes absente.");
+check(script?.includes("}, 2000);"), "La tolérance doit attendre deux secondes sans modification.");
+check(!script?.includes("}, 650);"), "L'ancien délai de tolérance est encore présent.");
+check(!html.includes("deux clics donne le nom"), "Faute d'accord française encore présente.");
 check(script?.includes("function pauseTimeAttack()"), "Pause du chronomètre absente.");
 check(script?.includes("function checkVictory()"), "Écran de victoire absent.");
 
@@ -148,4 +152,4 @@ if (errors.length) {
 }
 
 const generationCount = snapshot?.generations ? new Set(snapshot.generations).size : 9;
-console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues, ${sprites.length} sprites PNG, ${generationCount} générations avec régions, accueil flouté, saisie tolérante, pause et victoire.`);
+console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues relues, ${sprites.length} sprites PNG, ${generationCount} générations avec régions, accueil flouté et tolérance après 2 secondes.`);
