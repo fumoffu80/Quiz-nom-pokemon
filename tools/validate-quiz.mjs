@@ -87,6 +87,26 @@ try {
   errors.push(`Fonction de normalisation illisible: ${error.message}`);
 }
 
+const hintSource = script?.match(/function getHintText\(name\) \{[\s\S]*?^    \}/m)?.[0];
+let getHintText;
+try {
+  getHintText = vm.runInNewContext(`(${hintSource})`);
+} catch (error) {
+  errors.push(`Fonction d'indice adaptatif illisible: ${error.message}`);
+}
+
+if (getHintText) {
+  for (const [name, expected] of [
+    ["Mew", "M..."],
+    ["Abra", "Ab..."],
+    ["Évoli", "Év..."],
+    ["Pikachu", "Pik..."],
+    ["ミュウ", "ミ..."]
+  ]) {
+    check(getHintText(name) === expected, `Indice incorrect pour ${name}: ${getHintText(name)} au lieu de ${expected}.`);
+  }
+}
+
 if (normalize && snapshot) {
   const equivalentInputs = [
     ["Flabébé", "flabebe"],
@@ -134,6 +154,7 @@ check(html.includes('backdrop-filter: blur(16px)'), "Flou de protection derrièr
 check(script?.includes("const REGION_NAMES ="), "Noms des régions Pokémon absents.");
 check(script?.includes("function generationOptionLabel(number)"), "Régions non reliées aux générations.");
 check(script?.includes("function findUniqueTypoMatch(value)"), "Validation automatique des petites fautes absente.");
+check(script?.includes("function getHintText(name)"), "Restriction adaptative des lettres d'aide absente.");
 check(script?.includes("}, 2000);"), "La tolérance doit attendre deux secondes sans modification.");
 check(!script?.includes("}, 650);"), "L'ancien délai de tolérance est encore présent.");
 check(!html.includes("deux clics donne le nom"), "Faute d'accord française encore présente.");
@@ -152,4 +173,4 @@ if (errors.length) {
 }
 
 const generationCount = snapshot?.generations ? new Set(snapshot.generations).size : 9;
-console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues relues, ${sprites.length} sprites PNG, ${generationCount} générations avec régions, accueil flouté et tolérance après 2 secondes.`);
+console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues relues, ${sprites.length} sprites PNG, ${generationCount} générations avec régions, indices adaptatifs et tolérance après 2 secondes.`);

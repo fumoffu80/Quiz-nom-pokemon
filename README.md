@@ -24,6 +24,8 @@ construction décrit ci-dessous.
 - écran d'accueil présentant les fonctions et permettant de préparer la partie ;
 - régions affichées avec chaque génération et drapeau dynamique pour la langue ;
 - arrière-plan de l'accueil semi-transparent et flouté pour masquer les Pokémon ;
+- indice au clic adapté à la longueur du nom : 1 lettre jusqu'à 3 caractères,
+  2 lettres pour 4 ou 5 caractères, puis 3 lettres pour les noms plus longs ;
 - reconnaissance automatique d'une petite faute après deux secondes sans modification de la saisie ;
 - pause sécurisée qui masque le quiz et écran de victoire avec temps réalisé ;
 - favicon Poké Ball entièrement intégré au HTML.
