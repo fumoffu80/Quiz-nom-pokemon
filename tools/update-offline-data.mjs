@@ -82,6 +82,98 @@ function safeJson(value) {
   return JSON.stringify(value).replaceAll("<", "\\u003c");
 }
 
+function disableBrowserUpdater(html) {
+  let updated = html;
+
+  // Retirer entièrement le bouton et son statut, même si le bouton avait été
+  // seulement masqué avec l'attribut hidden dans une version précédente.
+  updated = updated.replace(
+    /\n\s*<button id="updateButton"[^>]*>[\s\S]*?<\/button>\n\s*<div id="syncStatus"[^>]*>[\s\S]*?<\/div>/,
+    ""
+  );
+
+  updated = updated.replace(
+    /\n    \.sync-status \{[\s\S]*?    #updateButton:disabled \{[^\n]*\}\n/,
+    "\n"
+  );
+  updated = updated.replace(
+    /^\s{8}(?:update|localReady|checking|updated|offline): .*?,\r?\n/gm,
+    ""
+  );
+  updated = updated.replace(
+    /^    let activeSnapshot = .*?\r?\n    let syncState = .*?\r?\n    let syncInProgress = .*?\r?\n    const spriteObjectUrls = .*?\r?\n/m,
+    ""
+  );
+  updated = updated.replace(
+    /^      document\.getElementById\('updateButton'\).*?\r?\n      setSyncStatus\(.*?\);\r?\n/m,
+    ""
+  );
+
+  const startMarker = "    const UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000;";
+  const endMarker = '    window.addEventListener("DOMContentLoaded", loadPokemonList);';
+  const start = updated.indexOf(startMarker);
+  const end = updated.indexOf(endMarker, start);
+  if (start >= 0 && end >= start) {
+    const localOnlyRuntime = `    const LOCAL_LANGUAGES = ["fr", "en", "es", "de", "it", "ja"];
+    const EMPTY_SPRITE = svgDataUri('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="12" fill="#111827"/><path fill="#4b5563" d="M48 17a31 31 0 1 0 0 62 31 31 0 0 0 0-62Zm0 8a23 23 0 0 1 21.6 15H55a10 10 0 0 0-14 0H26.4A23 23 0 0 1 48 25Zm0 46a23 23 0 0 1-21.6-15H41a10 10 0 0 0 14 0h14.6A23 23 0 0 1 48 71Zm0-23a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>');
+
+    function isValidSnapshot(snapshot) {
+      return snapshot
+        && Number.isInteger(snapshot.count)
+        && snapshot.count > 0
+        && Array.isArray(snapshot.identifiers)
+        && snapshot.identifiers.length >= snapshot.count
+        && snapshot.names
+        && LOCAL_LANGUAGES.every(language =>
+          Array.isArray(snapshot.names[language]) && snapshot.names[language].length >= snapshot.count
+        );
+    }
+
+    function pokemonFromSnapshot(snapshot) {
+      return Array.from({ length: snapshot.count }, (_, index) => ({
+        id: index + 1,
+        defaultName: snapshot.identifiers[index] || snapshot.names.en[index],
+        names: LOCAL_LANGUAGES.map(language => ({
+          language: { name: language === "ja" ? "ja-Hrkt" : language },
+          name: snapshot.names[language][index]
+        }))
+      }));
+    }
+
+    function applySnapshot(snapshot) {
+      if (!isValidSnapshot(snapshot)) return false;
+      MAX_POKEMON = snapshot.count;
+      pokemonList = pokemonFromSnapshot(snapshot);
+      totalElement.textContent = pokemonList.length;
+      updateLanguageUI();
+      createCards();
+      restoreFoundPokemon();
+      return true;
+    }
+
+    function localSpriteSource(id) {
+      const encoded = LOCAL_SPRITES[id - 1];
+      return encoded ? \`data:image/png;base64,\${encoded}\` : EMPTY_SPRITE;
+    }
+
+    function spriteSource(id) {
+      return localSpriteSource(id);
+    }
+
+    function loadPokemonList() {
+      loadProgress();
+      applySnapshot(OFFLINE_SNAPSHOT);
+    }
+
+    window.addEventListener("DOMContentLoaded", loadPokemonList);`;
+    updated = updated.slice(0, start)
+      + localOnlyRuntime
+      + updated.slice(end + endMarker.length);
+  }
+
+  return updated;
+}
+
 function extractExisting(html) {
   const blockStart = html.indexOf(START);
   const blockEnd = html.indexOf(END);
@@ -220,9 +312,10 @@ async function main() {
       : new Date().toISOString()
   };
   const replacement = `${START}\nconst OFFLINE_SNAPSHOT = ${safeJson(snapshot)};\nconst LOCAL_SPRITES = ${safeJson(sprites)};\n${END}`;
-  const updated = html.slice(0, html.indexOf(START))
+  const updatedWithData = html.slice(0, html.indexOf(START))
     + replacement
     + html.slice(html.indexOf(END) + END.length);
+  const updated = disableBrowserUpdater(updatedWithData);
   await writeFile(target, updated, "utf8");
   process.stdout.write(`Mise à jour terminée: ${count} Pokémon, ${Buffer.byteLength(updated)} octets.\n`);
 }
