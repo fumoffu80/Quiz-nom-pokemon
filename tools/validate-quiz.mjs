@@ -117,9 +117,18 @@ if (normalize && snapshot) {
 const generationRanges = [[1, 151], [152, 251], [252, 386], [387, 493], [494, 649], [650, 721], [722, 809], [810, 905], [906, 1025]];
 check(generationRanges.at(-1)[1] === minimumCount, "Les générations historiques ne couvrent pas les 1025 Pokémon actuels.");
 
-for (const id of ["generationSelect", "timerDialog", "timerPreset", "customHours", "customMinutes", "customSeconds"]) {
+for (const id of [
+  "generationSelect", "timerDialog", "timerPreset", "customHours", "customMinutes", "customSeconds",
+  "welcomeScreen", "welcomeLanguage", "welcomeGeneration", "welcomeStartButton",
+  "pauseTimerBtn", "pauseOverlay", "resumeTimerButton", "victoryDialog"
+]) {
   check(html.includes(`id="${id}"`), `Contrôle #${id} absent.`);
 }
+
+check(/<link rel="icon"[^>]+image\/svg\+xml[^>]+data:image\/svg\+xml/i.test(html), "Favicon Poké Ball autonome absent.");
+check(script?.includes("function findUniqueTypoMatch(value)"), "Validation automatique des petites fautes absente.");
+check(script?.includes("function pauseTimeAttack()"), "Pause du chronomètre absente.");
+check(script?.includes("function checkVictory()"), "Écran de victoire absent.");
 
 for (const forbidden of ["updateButton", "checkForUpdates", "indexedDB", "POKEAPI_COUNT_URL", "fetch("]) {
   check(!html.includes(forbidden), `Accès réseau ou mise à jour navigateur interdit: ${forbidden}.`);
@@ -133,4 +142,4 @@ if (errors.length) {
 }
 
 const generationCount = snapshot?.generations ? new Set(snapshot.generations).size : 9;
-console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues, ${sprites.length} sprites PNG, ${generationCount} générations et chrono personnalisable.`);
+console.log(`Validation réussie : ${expectedCount} Pokémon, ${languages.length} langues, ${sprites.length} sprites PNG, ${generationCount} générations, accueil, saisie tolérante, pause et victoire.`);
