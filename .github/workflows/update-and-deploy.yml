@@ -44,6 +44,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node tools/update-offline-data.mjs index.html
 
+      - name: Valider le quiz autonome
+        run: node tools/validate-quiz.mjs index.html
+
       - name: Enregistrer la nouvelle copie autonome
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,6 +73,7 @@ jobs:
             # Reconstruire depuis le dernier index.html évite d'écraser une
             # modification arrivée pendant l'exécution du workflow.
             node tools/update-offline-data.mjs index.html
+            node tools/validate-quiz.mjs index.html
             if git diff --quiet -- index.html; then
               echo "La mise à jour a déjà été intégrée par un autre commit."
               exit 0
