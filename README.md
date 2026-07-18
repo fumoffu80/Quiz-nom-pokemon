@@ -5,19 +5,31 @@ allemands, italiens et japonais, ainsi que les 1 025 sprites. Il fonctionne dès
 la première ouverture, même si PokeAPI, GitHub ou la connexion Internet sont
 indisponibles.
 
-## Mise à jour dans le navigateur
+## Aucun téléchargement depuis la page
 
-La copie intégrée est toujours affichée en premier. Au maximum une fois tous les
-sept jours, la page vérifie ensuite PokeAPI en arrière-plan. Les corrections ou
-nouveaux Pokémon sont conservés dans IndexedDB. Si cette vérification échoue,
-le quiz continue normalement avec sa base intégrée. Le bouton de mise à jour
-permet de forcer une vérification immédiate.
+La page web ne contient ni bouton de mise à jour ni vérification automatique.
+Elle n'appelle jamais PokeAPI ou GitHub depuis le navigateur et utilise
+exclusivement sa base intégrée. Les visiteurs ne peuvent donc pas déclencher une
+mise à jour. L'actualisation de la copie intégrée est réservée au workflow de
+construction décrit ci-dessous.
+
+## Fonctions du quiz
+
+- saisie tolérante aux accents, espaces, tirets, apostrophes et variantes de
+  Nidoran mâle/femelle ;
+- interface entièrement traduite dans les six langues disponibles ;
+- sélection de toutes les générations ou d'une génération précise ;
+- contre la montre avec durées rapides ou durée exacte personnalisée en heures,
+  minutes et secondes.
 
 ## Mise à jour et déploiement GitHub Pages
 
 Le workflow `.github/workflows/update-and-deploy.yml` s'exécute chaque lundi,
 sur demande et lors d'un envoi sur `main` ou `master`. Il reconstruit la base
 intégrée, enregistre le nouveau `index.html`, puis le déploie sur GitHub Pages.
+Avant chaque publication, `tools/validate-quiz.mjs` contrôle automatiquement la
+syntaxe, les noms traduits, les sprites PNG, l'autonomie hors ligne et les
+fonctions principales. Une copie incomplète n'est donc pas déployée.
 
 Dans les paramètres du dépôt GitHub :
 
@@ -34,6 +46,7 @@ Exécuter cette commande dans le pipeline de construction avant le déploiement 
 
 ```bash
 node tools/update-offline-data.mjs index.html
+node tools/validate-quiz.mjs index.html
 ```
 
 Le script n'utilise aucune dépendance npm. Le pipeline peut ensuite publier le
