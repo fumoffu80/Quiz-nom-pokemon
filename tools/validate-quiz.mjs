@@ -35,6 +35,14 @@ if (script) {
   }
 }
 
+const styles = html.match(/<style>([\s\S]*?)<\/style>/)?.[1] || "";
+const languageBarRule = styles.match(/\.lang-time-bar\s*\{([^}]*)\}/)?.[1] || "";
+const pokemonCardRule = styles.match(/\.pokemon-card\s*\{([^}]*)\}/)?.[1] || "";
+check(/position:\s*static\s*;/.test(languageBarRule), "La barre de commandes doit rester dans le flux pour ne pas recouvrir la saisie.");
+check(/flex:\s*1\s+1\s+100%\s*;/.test(languageBarRule), "La barre de commandes doit réserver sa propre ligne responsive.");
+check(!/transition:\s*(?:0?\.2s|200ms)\s*;/.test(pokemonCardRule), "Une transition globale sur les cartes ralentit fortement le redimensionnement.");
+check(/content-visibility:\s*auto\s*;/.test(pokemonCardRule), "Le rendu différé des cartes hors écran est absent.");
+
 const snapshot = readJsonConstant("OFFLINE_SNAPSHOT");
 const sprites = readJsonConstant("LOCAL_SPRITES");
 const minimumCount = 1025;
